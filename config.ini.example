@@ -1,0 +1,21 @@
+[API]
+key = YOUR_API_KEY
+max_product = 2500
+travel_mode = driving
+time_unit = minute
+distance_unit = km 
+matrix_url = https://dev.virtualearth.net/REST/v1/Routes/DistanceMatrix
+
+[SSH]
+enabled = true
+host = YOUR_USERNAME@YOUR_URL:YOUR_PORT
+keyname = YOUR_PRIVATE_KEY
+db_port = YOUR_DATABASE_PORT
+
+[PSQL]
+db = YOUR_DATABASE_NAME
+host = YOUR_DATABASE_IP
+port = YOUR_DATABASE_PORT
+username = YOUR_DB_USER
+password = YOUR_DB_PASSWORD
+dbtable = mymig.org_unit_shipping_distance

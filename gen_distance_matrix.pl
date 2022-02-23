@@ -22,7 +22,7 @@ sub geo_request{
         return undef;
     }
     #set up API connection
-    my $bing = Geo::Coder::Bing->new($api_settings{"key"});    
+    my $bing = Geo::Coder::Bing->new($api_settings{"key"});  
     # Y x dest_ref_size <= max_product
     # Y <= max_product / dest_ref_size
     # y = floor(max_product/dest_ref_size)
@@ -33,17 +33,19 @@ sub geo_request{
     print("data being chunked into ".$budget.".\n");
     my $it = natatime $budget, @origins;
     my $real_index = 0;
+    my $uri = URI->new($api_settings{"matrix_url"}."?key=".$bing->{key});
+    print("URI to post: $uri\n");
     while (my @coords = $it->())
     {
         my %content = (
             origins => \@coords, 
             destinations => $dest_ref, 
-            travelMode => $api_settings{"travel_mode"}, 
+            travelMode => $api_settings{"travel_mode"},
             timeUnit => $api_settings{"time_unit"}, 
             distanceUnit => $api_settings{"distance_unit"}
         );
-        my $json = encode_json \%content;
-        my $uri = URI->new($api_settings{"matrix_url"}."?key=".$bing->{key});
+        my $json = encode_json \%content;   
+        #print("JSON content: $json\n");
         my $rest_req = _post_request($bing,$uri,$json);
         # print Dumper $rest_req;
         #calculate the distance matrix for this chunk of origins.
@@ -63,7 +65,7 @@ sub geo_request{
             $real_index += min($budget,scalar(@coords));
             print("setting index to ".$real_index."\n");
         }               
-    }    
+    }
     return @results;
 }
 
@@ -72,7 +74,11 @@ sub _post_request {
     return unless $uri;
  
     my $res = $bing->{response} = $bing->ua->post($uri,'Content-Length' => 3500,'Content-Type' => 'application/json',Content => $form);
-    return unless $res->is_success;
+    unless($res->is_success){
+        print("API ERROR\n");
+        print(Dumper $res);
+        return;
+    }
  
     # Change the content type of the response from 'application/json' so
     # HTTP::Message will decode the character encoding.
@@ -136,7 +142,7 @@ if( $config->{SSH}{enabled} eq 'true'){
 my $dbh =DBI->connect($dsn, $usr, $pwrd, {AutoCommit => 0}) or die ( "Couldn't connect to database: " . DBI->errstr );
 
 # get org unit addr
-my $org_st = $dbh->prepare("SELECT ou.id AS org_unit, aoa.latitude, aoa.longitude FROM actor.org_unit ou JOIN actor.org_address aoa ON aoa.id = COALESCE(ou.billing_address, ou.mailing_address, ou.holds_address, ou.ill_address) order by org_unit");
+my $org_st = $dbh->prepare("SELECT ou.id AS org_unit, aoa.latitude, aoa.longitude FROM actor.org_unit ou JOIN actor.org_address aoa ON aoa.id = COALESCE(ou.billing_address, ou.mailing_address, ou.holds_address, ou.ill_address) where longitude is not null and latitude is not null order by org_unit");
 print("Retrieving org unit addresses\n");
 my @origins;
 my @destinations;
@@ -190,6 +196,7 @@ if(@distance_matrix){
     $dbh->commit or die $DBI::errstr;
 }
 else{
+    print(Dumper @distance_matrix);
     print("API failed to calculate distance matrix\n");
 }
 # close connection to database       

@@ -34,5 +34,5 @@ These should all be on CPAN.
 ## Usage
 
 ```
-perl geospatial_differentializer.pl
+perl gen_distance_matrix.pl
 ```
